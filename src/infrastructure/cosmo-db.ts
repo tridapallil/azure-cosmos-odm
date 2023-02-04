@@ -8,8 +8,8 @@ export const connect = async () => {
   }
   try {
     client = new CosmosClient({
-      endpoint: 'COSMO_CLIENT_URL',
-      key: 'COSMO_CLIENT_KEY',
+      endpoint: '',
+      key: '',
     })
     await client.databases.createIfNotExists({ id: 'databaseId' })
     return client

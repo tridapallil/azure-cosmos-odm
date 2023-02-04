@@ -1,21 +1,8 @@
 import { Container, ItemDefinition } from '@azure/cosmos'
-import _ from 'lodash'
+import _, { isEmpty } from 'lodash'
 import { connect } from '../cosmo-db'
 import { paramsHandler, selectField } from './functions'
-
-export interface MountQueryParams {
-  select?: object
-  where?: object
-  orderBy?: object
-  groupBy?: string[]
-}
-
-interface QueryParams {
-  select: string
-  where: string
-  orderBy: string
-  groupBy: string
-}
+import { MountQueryParams, QueryParams } from './interfaces'
 
 export class Repository<Entity extends ItemDefinition> {
   protected tableName = ''
@@ -57,7 +44,7 @@ export class Repository<Entity extends ItemDefinition> {
   }
 
   private buildWhere (where: any): string {
-    if (!where) {
+    if (isEmpty(where)) {
       return ''
     }
     const keys = Object.keys(where)
@@ -141,6 +128,44 @@ export class Repository<Entity extends ItemDefinition> {
   async delete (id: string): Promise<Entity | undefined> {
     const container = await this.container()
     const { resource: result } = await container.item(id).delete<Entity>()
+    return result
+  }
+
+  async bulkReplace (items: Entity[]): Promise<any> {
+    const container = await this.container()
+    const inputs: any[] = items.map((item: Entity) => (
+      {
+        operationType: 'Replace',
+        id: item.id,
+        resourceBody: item,
+     }
+    ))
+    const result = await container.items.bulk(inputs)
+    return result
+  }
+
+  async bulkUpsert (items: Entity[]): Promise<any> {
+    const container = await this.container()
+    const inputs: any[] = items.map((item: Entity) => (
+      {
+        operationType: 'Upsert',
+        resourceBody: item,
+     }
+    ))
+    const result = await container.items.bulk(inputs)
+    return result
+  }
+
+  async bulkDelete (items: Entity[]): Promise<any> {
+    const container = await this.container()
+    const inputs: any[] = items.map((item: Entity) => (
+      {
+        operationType: 'Delete',
+        id: item.id,
+        resourceBody: item,
+     }
+    ))
+    const result = await container.items.bulk(inputs)
     return result
   }
 }

@@ -1,35 +1,44 @@
 import { isArray } from 'lodash'
 
+const normalizeValue = (value: any) => {
+  if (typeof value === 'string') {
+    return `'${value}'`
+  }
+  return value
+}
+
 const buildEqual = (value: any): string => {
-  return `= ${value._eq}`
+  return `= ${normalizeValue(value._eq)}`
 }
 
 const buildNotEqual = (value: any): string => {
-  return `!= ${value._neq}`
+  return `!= ${normalizeValue(value._neq)}`
 }
 
 const buildGreaterThan = (value: any): string => {
-  return `> ${value._gt}`
+  return `> ${normalizeValue(value._gt)}`
 }
 
 const buildGreaterThanEqual = (value: any): string => {
-  return `>= ${value._gte}`
+  return `>= ${normalizeValue(value._gte)}`
 }
 
 const buildLowerThan = (value: any): string => {
-  return `< ${value._lt}`
+  return `< ${normalizeValue(value._lt)}`
 }
 
 const buildLowerThanEqual = (value: any): string => {
-  return `<= ${value._lte}`
+  return `<= ${normalizeValue(value._lte)}`
 }
 
 const buildIn = (object: any): string => {
-  return `IN (${object._in.join(', ')})`
+  const normalizedValues = object._in.map((item: string) => normalizeValue(item))
+  return `IN (${normalizedValues.join(', ')})`
 }
 
 const buildNotIn = (object: any): string => {
-  return `NOT IN (${object._nin.join(', ')})`
+  const normalizedValues = object._nin.map((item: string) => normalizeValue(item))
+  return `NOT IN (${normalizedValues.join(', ')})`
 }
 
 const selectField = (object: any, tableName: string): string => {
@@ -46,15 +55,19 @@ const buildCount = (object: any, tableName: string): string => {
   return `COUNT(${selectField(object, tableName)})`
 }
 
+const buildAverage = (object: any, tableName: string): string => {
+  return `AVG(${selectField(object, tableName)})`
+}
+
 const recursiveCalls = (objects: any, keys: any, tableName: string) => keys.map((key: any) => {
   let result = ''
-    if (key.startsWith('_')) {
-      result = paramsHandler[key as keyof typeof paramsHandler](objects[key], tableName)
-      return result
-    }
-    const objectKey = Object.keys(objects[key])
-    result = paramsHandler[objectKey[0] as keyof typeof paramsHandler](objects[key], tableName)
-    return `${tableName}.${key} ${result}`
+  if (key.startsWith('_')) {
+    result = paramsHandler[key as keyof typeof paramsHandler](objects[key], tableName)
+    return result
+  }
+  const objectKey = Object.keys(objects[key])
+  result = paramsHandler[objectKey[0] as keyof typeof paramsHandler](objects[key], tableName)
+  return `${tableName}.${key} ${result}`
 })
 
 const recursiveArray = (objects: any, tableName: string) => {
@@ -103,6 +116,7 @@ const paramsHandler = {
   _lt: buildLowerThan,
   _lte: buildLowerThanEqual,
   _count: buildCount,
+  _avg: buildAverage,
 }
 
 export {
