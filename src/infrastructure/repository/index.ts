@@ -1,5 +1,5 @@
 import { Container, ItemDefinition } from '@azure/cosmos'
-import _, { isEmpty } from 'lodash'
+import _, { isEmpty, chunk } from 'lodash'
 import { connect } from '../cosmo-db'
 import { paramsHandler, selectField } from './functions'
 import { MountQueryParams, QueryParams } from './interfaces'
@@ -144,16 +144,23 @@ export class Repository<Entity extends ItemDefinition> {
     return result
   }
 
-  async bulkUpsert (items: Entity[]): Promise<any> {
+  async bulkUpsert (items: Entity[], chunkLimit?: number): Promise<any> {
     const container = await this.container()
+    const chunkNumber: number = chunkLimit ?? 50
     const inputs: any[] = items.map((item: Entity) => (
       {
         operationType: 'Upsert',
         resourceBody: item,
-     }
+      }
     ))
-    const result = await container.items.bulk(inputs)
-    return result
+    const chunks = chunk(inputs, chunkNumber)
+    let results: any = []
+
+    for (const chunkToInsert of chunks) {
+      const result = await container.items.bulk(chunkToInsert)
+      results = [...results, ...result]
+    }
+    return results
   }
 
   async bulkDelete (items: Entity[]): Promise<any> {
