@@ -1,4 +1,4 @@
-# azure-cosmos-odm
+# Azure Cosmos DB ODM
 This is an ODM for azure cosmos db, to help devs to connect to database and get data using abstracted queries
 
 This is a 0.5v of an ODM to elp to get data from Azure Cosmos DB.
