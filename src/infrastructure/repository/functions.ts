@@ -1,5 +1,7 @@
 import { isArray } from 'lodash'
 
+const HAS_OWN_VALUE = ['_array_contains']
+
 const normalizeValue = (value: any) => {
   if (typeof value === 'string') {
     return `'${value}'`
@@ -41,6 +43,10 @@ const buildNotIn = (object: any): string => {
   return `NOT IN (${normalizedValues.join(', ')})`
 }
 
+const buildArrayContains = (object: any, tableName: string, keyName: string): string => {
+  return `ARRAY_CONTAINS(${tableName}.${keyName}, '${object._array_contains}')`
+}
+
 const selectField = (object: any, tableName: string): string => {
   const columnNames = Object.keys(object)
   const [columnName] = columnNames
@@ -59,16 +65,21 @@ const buildAverage = (object: any, tableName: string): string => {
   return `AVG(${selectField(object, tableName)})`
 }
 
-const recursiveCalls = (objects: any, keys: any, tableName: string) => keys.map((key: any) => {
-  let result = ''
-  if (key.startsWith('_')) {
-    result = paramsHandler[key as keyof typeof paramsHandler](objects[key], tableName)
-    return result
-  }
-  const objectKey = Object.keys(objects[key])
-  result = paramsHandler[objectKey[0] as keyof typeof paramsHandler](objects[key], tableName)
-  return `${tableName}.${key} ${result}`
-})
+const recursiveCalls = (objects: any, keys: any, tableName: string) =>
+  keys.map((key: any) => {
+    let result = ''
+    if (key.startsWith('_')) {
+      result = paramsHandler[key as keyof typeof paramsHandler](objects[key], tableName, key)
+      return result
+    }
+    const objectKey = Object.keys(objects[key])
+    result = paramsHandler[objectKey[0] as keyof typeof paramsHandler](objects[key], tableName, key)
+
+    if (HAS_OWN_VALUE.includes(objectKey[0])) {
+      return result
+    }
+    return `${tableName}.${key} ${result}`
+  })
 
 const recursiveArray = (objects: any, tableName: string) => {
   const results = []
@@ -108,6 +119,7 @@ const paramsHandler = {
   _or: buildOr,
   _and: buildAnd,
   _in: buildIn,
+  _array_contains: buildArrayContains,
   _nin: buildNotIn,
   _eq: buildEqual,
   _neq: buildNotEqual,
@@ -119,7 +131,4 @@ const paramsHandler = {
   _avg: buildAverage,
 }
 
-export {
-  paramsHandler,
-  selectField,
-}
+export { paramsHandler, selectField }

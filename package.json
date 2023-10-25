@@ -1,6 +1,6 @@
 {
   "name": "cosmos-odm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "This is an ODM to help consulting the database abstracting queries",
   "main": "index.js",
   "scripts": {
